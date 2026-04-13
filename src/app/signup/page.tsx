@@ -22,6 +22,7 @@ export default function SignupPage() {
     setError("");
 
     try {
+      if (!auth) throw new Error("Firebase Auth is not initialized. Check your Environment Variables.");
       await createUserWithEmailAndPassword(auth, email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
