@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import type { Lead } from "@/types/lead";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,8 @@ export default function DashboardPage() {
   }, [fetchLeads]);
 
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Lead Database</h1>
@@ -134,6 +136,7 @@ export default function DashboardPage() {
           </TableBody>
         </Table>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
