@@ -10,7 +10,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Safe initialization that doesn't crash during Next.js Vercel build prerendering
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+
+// Only call getAuth if we have an API key (avoids Invalid API Key build crash)
+const auth = firebaseConfig.apiKey ? getAuth(app) : null as any;
 
 export { app, auth };
