@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,10 +11,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Safe initialization that doesn't crash during Next.js Vercel build prerendering
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// Only call getAuth if we have an API key (avoids Invalid API Key build crash)
-const auth = firebaseConfig.apiKey ? getAuth(app) : null as Auth | null;
-
-export { app, auth };
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export default app;

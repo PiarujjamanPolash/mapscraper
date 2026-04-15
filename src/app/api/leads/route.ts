@@ -1,38 +1,62 @@
-import { NextResponse } from "next/server";
-import { getDb } from "@/lib/firebase-admin";
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminFirestore } from "@/lib/firebase-admin";
+import { Lead } from "@/types/lead";
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get("jobId");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const search = searchParams.get("search") || "";
+    const sortBy = searchParams.get("sortBy") || "lead_score";
+    const sortDir = searchParams.get("sortDir") || "desc";
+    const userId = searchParams.get("userId") || "";
 
-    const minScore = searchParams.get("minScore");
-    const noWebsite = searchParams.get("noWebsite") === "true";
-    const lowReviews = searchParams.get("lowReviews") === "true";
+    const db = getAdminFirestore();
 
-    const db = getDb();
-    let query: FirebaseFirestore.Query = db.collection("leads").orderBy("createdAt", "desc");
+    let query = db.collection("leads") as FirebaseFirestore.Query;
 
-    if (minScore) {
-      query = query.where("score", ">=", parseInt(minScore));
+    if (jobId) {
+      query = query.where("job_id", "==", jobId);
     }
-    if (noWebsite) {
-      query = query.where("website", "==", null);
-    }
-    if (lowReviews) {
-      query = query.where("reviewCount", "<", 20);
+
+    // Sort
+    if (sortBy === "rating" || sortBy === "reviews" || sortBy === "lead_score") {
+      query = query.orderBy(sortBy, sortDir === "asc" ? "asc" : "desc");
+    } else {
+      query = query.orderBy("lead_score", "desc");
     }
 
     const snapshot = await query.get();
+    let leads: Lead[] = snapshot.docs.map((doc) => doc.data() as Lead);
 
-    const leads = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Client-side search filter (Firestore doesn't support full-text search)
+    if (search) {
+      const q = search.toLowerCase();
+      leads = leads.filter(
+        (lead) =>
+          lead.business_name?.toLowerCase().includes(q) ||
+          lead.address?.toLowerCase().includes(q) ||
+          lead.phone?.includes(q) ||
+          lead.email?.toLowerCase().includes(q)
+      );
+    }
 
-    return NextResponse.json({ success: true, count: leads.length, leads });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Fetch leads error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const total = leads.length;
+    const paginated = leads.slice((page - 1) * limit, page * limit);
+
+    return NextResponse.json({
+      leads: paginated,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("Get leads error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch leads" },
+      { status: 500 }
+    );
   }
 }

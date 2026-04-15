@@ -1,16 +1,35 @@
 export interface Lead {
   id: string;
-  name: string;
-  placeId: string;
+  business_name: string;
   address: string;
-  city?: string | null;
-  country?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  phone?: string | null;
-  website?: string | null;
-  rating?: number | null;
-  reviewCount?: number | null;
-  score?: number | null;
-  createdAt: string; // ISO string (Firestore Timestamp converted)
+  phone: string;
+  email: string;
+  website: string;
+  rating: number;
+  reviews: number;
+  keyword: string;
+  niche: string;
+  industry: string;
+  city: string;
+  region: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  google_maps_url: string;
+  place_id: string;
+  lead_score: number;
+  created_at: string;
+  job_id: string;
+}
+
+export interface LeadSearchParams {
+  industry: string;
+  niche: string;
+  keyword: string;
+  country: string;
+  region: string;
+  city: string;
+  radius: number; // in km
+  maxResults: number;
+  extractEmails: boolean;
 }

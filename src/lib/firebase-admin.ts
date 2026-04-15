@@ -1,40 +1,30 @@
-import admin from "firebase-admin";
-import type { App } from "firebase-admin/app";
+import { initializeApp, getApps, cert, App } from "firebase-admin/app";
+import { getFirestore, Firestore } from "firebase-admin/firestore";
 
-let app: App | null = null;
+let app: App;
+let adminDb: Firestore;
 
-function getFirebaseApp(): App {
-  if (app) return app;
-
-  if (admin.apps.length > 0) {
-    app = admin.apps[0]!;
-    return app;
+function getAdminApp(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  // Vercel stores multiline env vars with literal \n — replace them
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error(
-      "Missing Firebase environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY"
-    );
-  }
-
-  app = admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId,
-      clientEmail,
-      privateKey,
+  app = initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: privateKey,
     }),
   });
 
   return app;
 }
 
-export function getDb() {
-  return admin.firestore(getFirebaseApp());
+export function getAdminFirestore(): Firestore {
+  if (adminDb) return adminDb;
+  const application = getAdminApp();
+  adminDb = getFirestore(application);
+  return adminDb;
 }
-
-export default admin;
